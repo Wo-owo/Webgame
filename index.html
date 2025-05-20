@@ -1,16 +1,25 @@
-<div id="app">
-  <p>{{ message }}</p>
-  <button @click="changeMessage">修改内容</button>
-</div>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>文字冒险游戏</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Vue CDN -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+  <div id="app">
+    <h1>{{ title }}</h1>
+    <p v-if="currentText">{{ currentText }}</p>
 
-<script>
-const app = Vue.createApp({
-  data() {
-    return { message: "你好，Vue!" }
-  },
-  methods: {
-    changeMessage() { this.message = "你点击了按钮!" }
-  }
-});
-app.mount("#app");
-</script>
+    <div v-if="choices.length > 0">
+      <button v-for="(choice, index) in choices" :key="index" @click="makeChoice(index)">
+        {{ choice.text }}
+      </button>
+    </div>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
