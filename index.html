@@ -1,0 +1,16 @@
+<div id="app">
+  <p>{{ message }}</p>
+  <button @click="changeMessage">修改内容</button>
+</div>
+
+<script>
+const app = Vue.createApp({
+  data() {
+    return { message: "你好，Vue!" }
+  },
+  methods: {
+    changeMessage() { this.message = "你点击了按钮!" }
+  }
+});
+app.mount("#app");
+</script>
