@@ -1,5 +1,4 @@
-<!-- 随机选项文字游戏架构示例 -->
-
+<!-- 随机选项文字游戏架构示例（含失败判定和重启） -->
 <!DOCTYPE html>
 <html lang="zh">
 <head>
@@ -10,33 +9,38 @@
   <!-- Vue CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <style>
-    /* 简单样式示例 */
     #app { max-width: 600px; margin: 2rem auto; font-family: Arial, sans-serif; }
     .points { font-size: 1.2rem; margin-bottom: 1rem; }
+    .status { margin-bottom: 1rem; color: #c33; }
     .option-list { display: flex; flex-direction: column; gap: 1rem; }
     .option-card { display: flex; border: 1px solid #ccc; padding: .5rem; border-radius: .5rem; }
     .option-img { width: 80px; height: 80px; background-color: #eee; margin-right: .5rem; display: flex; align-items: center; justify-content: center; color: #888; }
     .option-content { flex: 1; display: flex; flex-direction: column; }
     .option-name { font-weight: bold; margin-bottom: .25rem; }
     .option-desc { flex: 1; margin-bottom: .25rem; }
-    .option-cost { color: #c33; font-weight: bold; }
-    button.choice-btn { margin-top: .5rem; padding: .5rem; border: none; background: #007bff; color: white; border-radius: .25rem; cursor: pointer; }
+    .option-cost { font-weight: bold; }
+    button { margin-top: .5rem; padding: .5rem; border: none; background: #007bff; color: white; border-radius: .25rem; cursor: pointer; }
+    .restart-btn { background: #28a745; margin-top: 2rem; }
   </style>
 </head>
 <body>
   <div id="app">
     <div class="points">当前点数：{{ points }}</div>
+    <div v-if="points < 0" class="status">警告：点数为负，剩余失败机会：{{ 3 - failCount }}</div>
+
     <div class="option-list">
       <div v-for="(opt, idx) in options" :key="opt.id" class="option-card">
         <div class="option-img">图片</div>
         <div class="option-content">
           <div class="option-name">{{ opt.name }}</div>
           <div class="option-desc">{{ opt.description }}</div>
-          <div class="option-cost">消耗：{{ opt.cost }}</div>
-          <button class="choice-btn" @click="makeChoice(idx)">选择</button>
+          <div class="option-cost">{{ opt.cost >= 0 ? '消耗：' + opt.cost : '获得：' + Math.abs(opt.cost) }} 点</div>
+          <button @click="makeChoice(idx)">选择</button>
         </div>
       </div>
     </div>
+
+    <button class="restart-btn" @click="restart">重新开始</button>
   </div>
 
   <script>
@@ -45,22 +49,26 @@
     createApp({
       data() {
         return {
+          initialPoints: 100,
           points: 100,
+          failCount: 0,
           options: []
         }
       },
       methods: {
         generateOptions() {
-          // 随机生成3~4个选项示例
           const count = Math.floor(Math.random() * 2) + 3; // 3 或 4
           const names = ['探险', '休息', '交易', '训练', '研究'];
           this.options = Array.from({ length: count }, () => {
             const name = names[Math.floor(Math.random() * names.length)];
-            const cost = Math.floor(Math.random() * 20) + 1;
+            const cost = Math.floor(Math.random() * 31) - 10; // -10 到 20
+            const desc = cost >= 0
+              ? `${name} 将消耗你 ${cost} 点数`
+              : `${name} 将为你带来 ${Math.abs(cost)} 点收益`;
             return {
               id: Date.now().toString(36) + Math.random().toString(36).substr(2),
               name,
-              description: `${name} 将花费你 ${cost} 点数`, // 可以更丰富
+              description: desc,
               cost,
               imgSrc: ''
             };
@@ -68,14 +76,29 @@
         },
         makeChoice(index) {
           const choice = this.options[index];
-          if (this.points < choice.cost) {
-            alert('点数不足');
+          // 扣除或增加点数
+          this.points -= choice.cost;
+
+          // 检查负值失败次数
+          if (this.points < 0) {
+            this.failCount++;
+          } else {
+            this.failCount = 0;
+          }
+
+          // 达到三次失败机会则游戏失败
+          if (this.failCount >= 3) {
+            alert('失败！三次选择后仍未恢复至非负点数。游戏结束。');
+            this.restart();
             return;
           }
-          this.points -= choice.cost;
-          // TODO: 根据选择执行逻辑，例如调整状态、触发事件
 
           // 生成下一轮选项
+          this.generateOptions();
+        },
+        restart() {
+          this.points = this.initialPoints;
+          this.failCount = 0;
           this.generateOptions();
         }
       },
